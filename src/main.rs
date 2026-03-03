@@ -74,6 +74,11 @@ enum TodoAction {
         /// Task ID
         id: u32,
     },
+    /// Mark a task as not done
+    Undone {
+        /// Task ID
+        id: u32,
+    },
     /// Remove a task
     Remove {
         /// Task ID
@@ -146,6 +151,17 @@ async fn main() {
                             std::process::exit(1);
                         }
                         println!("Marked #{id} as done.");
+                    }
+                    Some(TodoAction::Undone { id }) => {
+                        if let Err(e) = todos.mark_undone(id) {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Marked #{id} as not done.");
                     }
                     Some(TodoAction::Remove { id }) => {
                         if let Err(e) = todos.remove(id) {

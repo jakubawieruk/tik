@@ -114,7 +114,7 @@ pub async fn run(
                                     if let Ok(mut list) = todos.lock() {
                                         if let Some(todo) = list.items.get(sel) {
                                             let id = todo.id;
-                                            let _ = list.mark_done(id);
+                                            let _ = list.toggle_done(id);
                                             let _ = list.save();
                                         }
                                     }

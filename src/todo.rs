@@ -84,6 +84,22 @@ impl TodoList {
         Ok(())
     }
 
+    pub fn mark_undone(&mut self, id: u32) -> Result<(), String> {
+        let todo = self.items.iter_mut().find(|t| t.id == id)
+            .ok_or_else(|| format!("No todo with id {id}"))?;
+        todo.done = false;
+        todo.completed_at = None;
+        Ok(())
+    }
+
+    pub fn toggle_done(&mut self, id: u32) -> Result<bool, String> {
+        let todo = self.items.iter_mut().find(|t| t.id == id)
+            .ok_or_else(|| format!("No todo with id {id}"))?;
+        todo.done = !todo.done;
+        todo.completed_at = if todo.done { Some(Local::now()) } else { None };
+        Ok(todo.done)
+    }
+
     pub fn remove(&mut self, id: u32) -> Result<(), String> {
         let idx = self.items.iter().position(|t| t.id == id)
             .ok_or_else(|| format!("No todo with id {id}"))?;
@@ -281,6 +297,28 @@ mod tests {
     fn mark_done_invalid_id() {
         let mut list = TodoList::new();
         assert!(list.mark_done(99).is_err());
+    }
+
+    #[test]
+    fn mark_undone() {
+        let mut list = TodoList::new();
+        list.add("Task".to_string());
+        let _ = list.mark_done(1);
+        assert!(list.items[0].done);
+        assert!(list.mark_undone(1).is_ok());
+        assert!(!list.items[0].done);
+        assert!(list.items[0].completed_at.is_none());
+    }
+
+    #[test]
+    fn toggle_done() {
+        let mut list = TodoList::new();
+        list.add("Task".to_string());
+        assert_eq!(list.toggle_done(1).unwrap(), true);
+        assert!(list.items[0].done);
+        assert_eq!(list.toggle_done(1).unwrap(), false);
+        assert!(!list.items[0].done);
+        assert!(list.items[0].completed_at.is_none());
     }
 
     #[test]
