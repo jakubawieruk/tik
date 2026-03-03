@@ -36,6 +36,11 @@ enum Commands {
         #[command(subcommand)]
         action: ConfigAction,
     },
+    /// Manage todo tasks
+    Todo {
+        #[command(subcommand)]
+        action: Option<TodoAction>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -49,6 +54,47 @@ enum ConfigAction {
         /// New value (duration like "25m" or number for rounds)
         value: String,
     },
+}
+
+#[derive(Subcommand)]
+enum TodoAction {
+    /// Add a new task
+    Add {
+        /// Task description
+        text: String,
+    },
+    /// List all tasks
+    List {
+        /// Output as JSON
+        #[arg(long)]
+        json: bool,
+    },
+    /// Mark a task as done
+    Done {
+        /// Task ID
+        id: u32,
+    },
+    /// Remove a task
+    Remove {
+        /// Task ID
+        id: u32,
+    },
+    /// Move a task to a new position (1-based)
+    Move {
+        /// Task ID
+        id: u32,
+        /// Target position (1-based)
+        position: u32,
+    },
+    /// Edit a task's text
+    Edit {
+        /// Task ID
+        id: u32,
+        /// New text
+        text: String,
+    },
+    /// Remove all completed tasks
+    Clear,
 }
 
 #[tokio::main]
@@ -70,6 +116,77 @@ async fn main() {
                             eprintln!("{e}");
                             std::process::exit(1);
                         }
+                    }
+                }
+            }
+            Commands::Todo { action } => {
+                let mut todos = todo::TodoList::load();
+                match action {
+                    None | Some(TodoAction::List { json: false }) => {
+                        todos.print_list();
+                    }
+                    Some(TodoAction::List { json: true }) => {
+                        todos.print_list_json();
+                    }
+                    Some(TodoAction::Add { text }) => {
+                        todos.add(text.clone());
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Added: {} (#{})", text, todos.next_id - 1);
+                    }
+                    Some(TodoAction::Done { id }) => {
+                        if let Err(e) = todos.mark_done(id) {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Marked #{id} as done.");
+                    }
+                    Some(TodoAction::Remove { id }) => {
+                        if let Err(e) = todos.remove(id) {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Removed #{id}.");
+                    }
+                    Some(TodoAction::Move { id, position }) => {
+                        if let Err(e) = todos.move_to(id, position) {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Moved #{id} to position {position}.");
+                    }
+                    Some(TodoAction::Edit { id, text }) => {
+                        if let Err(e) = todos.edit(id, text.clone()) {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Updated #{id}: {text}");
+                    }
+                    Some(TodoAction::Clear) => {
+                        let count = todos.clear_completed();
+                        if let Err(e) = todos.save() {
+                            eprintln!("{e}");
+                            std::process::exit(1);
+                        }
+                        println!("Cleared {count} completed task{}.", if count == 1 { "" } else { "s" });
                     }
                 }
             }

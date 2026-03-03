@@ -112,6 +112,23 @@ impl TodoList {
         self.items.iter().find(|t| !t.done)
     }
 
+    pub fn print_list(&self) {
+        if self.items.is_empty() {
+            println!("No tasks.");
+            return;
+        }
+        println!("Tasks:");
+        for (i, todo) in self.items.iter().enumerate() {
+            let status = if todo.done { "x" } else { " " };
+            println!("  {}. [{}] {:<30} (#{})", i + 1, status, todo.text, todo.id);
+        }
+    }
+
+    pub fn print_list_json(&self) {
+        let json = serde_json::to_string_pretty(self).unwrap_or_else(|_| "{}".to_string());
+        println!("{json}");
+    }
+
     /// Returns true if there are any pending tasks.
     pub fn has_pending(&self) -> bool {
         self.items.iter().any(|t| !t.done)
