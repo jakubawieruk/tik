@@ -214,8 +214,9 @@ async fn main() {
     let input = match cli.duration {
         Some(d) => d,
         None => {
-            eprintln!("Usage: tik <duration|preset> or tik log");
-            eprintln!("Examples: tik 25m, tik pomodoro, tik 1h30m");
+            eprintln!("Usage: tik <duration|preset>");
+            eprintln!("       tik <log|config|todo>");
+            eprintln!("Examples: tik 25m, tik pomodoro, tik todo add \"Task\"");
             std::process::exit(1);
         }
     };

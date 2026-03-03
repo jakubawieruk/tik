@@ -46,6 +46,16 @@ tik log              # Show today's and this week's session summary
 tik config show      # Show current configuration
 tik config set work 30m   # Set work duration to 30 minutes
 tik config set rounds 6   # Set number of rounds to 6
+
+tik todo add "Write docs"     # Add a task
+tik todo list                 # List all tasks
+tik todo list --json          # List as JSON (for scripting/bots)
+tik todo done 1               # Mark task #1 as done
+tik todo undone 1             # Mark task #1 as not done
+tik todo move 2 1             # Move task #2 to position 1
+tik todo edit 1 "New text"    # Edit task text
+tik todo remove 1             # Delete a task
+tik todo clear                # Remove all completed tasks
 ```
 
 ## Controls
@@ -54,7 +64,15 @@ tik config set rounds 6   # Set number of rounds to 6
 - **s** — skip to next phase (disabled on last round)
 - **a** / **d** — add / remove a round (during sessions)
 - **x** — stop session early
+- **Tab** — switch focus between timer and todo sidebar
 - **Ctrl+C** — quit
+
+When the todo sidebar has focus:
+
+- **↑ / ↓** — navigate tasks
+- **Enter** — toggle done / undone
+- **Shift+↑ / Shift+↓** — reorder tasks
+- **Tab** — switch back to timer
 
 ## Config
 
@@ -84,6 +102,14 @@ rounds = 4
 ```
 
 Built-in defaults (pomodoro: 25m, break: 5m, long-break: 15m, 4 rounds) work without a config file.
+
+## Todo List
+
+Manage a task queue that appears as a sidebar during timer sessions. The top pending task is shown as the "current task" above the timer.
+
+Tasks are stored in `~/.local/share/pomitik/todos.json` and persist across sessions. The `--json` flag on `tik todo list` makes it easy for scripts and bots to manage your task queue.
+
+The sidebar appears automatically when you have pending tasks. On narrow terminals (<60 columns) it falls back to the standard centered layout.
 
 ## Session Log
 
