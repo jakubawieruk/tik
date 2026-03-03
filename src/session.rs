@@ -10,10 +10,18 @@ use crossterm::{
 };
 use std::io::{self, Write};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 pub async fn run_session(session: &SessionConfig, config: &Config, silent: bool, title: Option<&str>) {
     let total_rounds = Arc::new(AtomicU32::new(session.rounds));
+    let todos = {
+        let list = crate::todo::TodoList::load();
+        if list.items.is_empty() {
+            None
+        } else {
+            Some(Arc::new(Mutex::new(list)))
+        }
+    };
     let mut round: u32 = 1;
     let mut in_alt_screen = false;
 
@@ -49,7 +57,7 @@ pub async fn run_session(session: &SessionConfig, config: &Config, silent: bool,
             timer::TimerContext::Work,
             title,
             Some((round, Arc::clone(&total_rounds))),
-            None,
+            todos.clone(),
         ).await;
 
         in_alt_screen = outcome == timer::TimerOutcome::Skipped;
@@ -107,7 +115,7 @@ pub async fn run_session(session: &SessionConfig, config: &Config, silent: bool,
             timer::TimerContext::Break,
             title,
             Some((round, Arc::clone(&total_rounds))),
-            None,
+            todos.clone(),
         ).await;
 
         in_alt_screen = outcome == timer::TimerOutcome::Skipped;
@@ -136,6 +144,16 @@ pub async fn run_session(session: &SessionConfig, config: &Config, silent: bool,
     if in_alt_screen {
         cleanup_alt_screen();
     }
+
+    // Save todos if they were modified during session
+    if let Some(ref todos) = todos {
+        if let Ok(list) = todos.lock() {
+            if let Err(e) = list.save() {
+                eprintln!("Failed to save todos: {e}");
+            }
+        }
+    }
+
     let final_total = total_rounds.load(Ordering::Relaxed);
     println!("Session complete! {} rounds finished.", final_total);
 }

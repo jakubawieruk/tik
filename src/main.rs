@@ -238,7 +238,24 @@ async fn main() {
     };
 
     let display = dur.format_hms();
-    let outcome = timer::run(dur.total_secs, &name, timer::TimerContext::Standalone, cli.title.as_deref(), None, None).await;
+    let todos = {
+        let list = todo::TodoList::load();
+        if list.items.is_empty() {
+            None
+        } else {
+            Some(std::sync::Arc::new(std::sync::Mutex::new(list)))
+        }
+    };
+    let outcome = timer::run(dur.total_secs, &name, timer::TimerContext::Standalone, cli.title.as_deref(), None, todos.clone()).await;
+
+    // Save todos if they were modified during timer
+    if let Some(ref todos) = todos {
+        if let Ok(list) = todos.lock() {
+            if let Err(e) = list.save() {
+                eprintln!("Failed to save todos: {e}");
+            }
+        }
+    }
 
     if outcome == timer::TimerOutcome::Completed {
         notify::send_completion(&name, &display, cli.silent);
