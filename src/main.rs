@@ -5,6 +5,7 @@ mod notify;
 mod render;
 mod session;
 mod timer;
+mod todo;
 
 use clap::{Parser, Subcommand};
 
